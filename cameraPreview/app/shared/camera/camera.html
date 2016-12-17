@@ -1,0 +1,4 @@
+﻿<!--[ngStyle]="{'height': height}"-->
+    <Placeholder [ngStyle]="{'height': height}" *ngIf="init" (creatingView)="onCreatingView($event)" id="placeholder-view"></Placeholder>
+    <Image (tap)="takeVideo()" class="capture" src="~/img/capture.png"></Image>
+

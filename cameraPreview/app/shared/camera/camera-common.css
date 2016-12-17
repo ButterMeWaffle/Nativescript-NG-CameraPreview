@@ -1,0 +1,16 @@
+﻿Placeholder {
+    height:500;
+    width:auto;
+    z-index:1;
+}
+#placeholder-view {
+    height:500;
+    z-index:1;
+}
+.mainContent {
+    height:500;
+    z-index:1;
+}
+.capture {
+    z-index:999999999999999999;
+}
