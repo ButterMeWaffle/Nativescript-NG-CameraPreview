@@ -1,6 +1,7 @@
 ﻿import { Component, OnInit, ViewChild, Injectable } from "@angular/core";
 import permissions = require('nativescript-permissions');
-import { Placeholder } from "ui/placeholder";
+import placeholder = require("ui/placeholder");
+import placeholderModule = require("ui/placeholder");
 import { Page } from "ui/page";
 import {RouterExtensions} from 'nativescript-angular/router/router-extensions'
 import platformModule = require("platform");
@@ -8,27 +9,34 @@ import application = require("application");
 import app = require('application');
 import utils = require("utils/utils");
 import fs = require("file-system");
-declare var android;
-declare var record;
-declare var options;
+declare var android; // declare andfroid so you have access to .camera2 ** this is very important!*
+//@Interfaces([android.view.TextureView.SurfaceTextureListener])
+//declare var record;
+//declare var options;
+//declare var java;
 
 
 @Component({
     selector: "Camera",
     templateUrl: "shared/camera/camera.html",
-    styleUrls: ["shared/camera/camera-common.css"],
+    styleUrls: ["shared/camera/camera-common.css"]
 })
-@Injectable()   
-export class Camera extends java.lang.Object implements OnInit, android.view.TextureView.SurfaceTextureListener  {
-    //public args: placeholder.CreateViewEventData;
-    //public output;
+// if (platformModule.isAndroid) {
+@Injectable()   // this alows the compoennt to be exported for use in other pages
+export class Camera extends java.lang.Object implements OnInit, android.view.TextureView.SurfaceTextureListener {
+   
+    public args: placeholder.CreateViewEventData; // define what args will be, **NOT SETTING ANY VALUES**
+    
+    public output;
     public init: boolean = false;
     public height: any;
     public width: any;
-    @ViewChild(Placeholder) public Placeholder: Placeholder;
+    //@ViewChild(placeholder) public Placeholder: placeholder;
     constructor(private page: Page, private routerExtensions: RouterExtensions) {
         super();
+        //camera.requestPermissions();
         
+       
         this.height = platformModule.screen.mainScreen.heightPixels;
         this.width = platformModule.screen.mainScreen.widthPixels;
         console.log("Screen height from Camera Module: " + platformModule.screen.mainScreen.heightPixels);
@@ -89,6 +97,7 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
         } else {
             isActive = true;
         }
+        console.log(isActive)
         return isActive;
     }
     public goBack() {
@@ -114,117 +123,54 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
         
     }
 
-    public takeVideo = (Intent: android.content.Intent) => {    
+    public initRecorder = () => {
+    classesRef.mMediaRecorder.setAudioSource(android.media.MediaRecorder.AudioSource.DEFAULT);
+    classesRef.mMediaRecorder.setVideoSource(android.media.MediaRecorder.VideoSource.DEFAULT);
+    
+    var cpHigh = android.media.CamcorderProfile
+        .get(android.media.CamcorderProfile.QUALITY_HIGH);
+        classesRef.mMediaRecorder.setProfile(cpHigh);
+        classesRef.mMediaRecorder.setOutputFile("/sdcard/videocapture_example.mp4");
+        classesRef.mMediaRecorder.setMaxDuration(50000); // 50 seconds
+        classesRef.mMediaRecorder.setMaxFileSize(5000000); // Approximately 5 megabytes
+    }
 
-        classesRef.mMediaRecorder.setAudioSource(android.media.MediaRecorder.AudioSource.MIC);
-        classesRef.mMediaRecorder.setVideoSource(android.media.MediaRecorder.VideoSource.SURFACE);
-        classesRef.mMediaRecorder.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4);
-        classesRef.mMediaRecorder.setOutputFile(classesRef.mNextVideoAbsolutePath);
-        classesRef.mMediaRecorder.setVideoEncodingBitRate(10000000);
-        classesRef.mMediaRecorder.setVideoFrameRate(30);
-        classesRef.mMediaRecorder.setVideoSize(this.width, this.height);
-        classesRef.mMediaRecorder.setVideoEncoder(android.media.MediaRecorder.VideoEncoder.H264);
-        classesRef.mMediaRecorder.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC);
+    public takeVideo = (Intent: android.content.Intent) => {    // this does not work as of now
+        console.log('test')
+        //var mCamera = getCameraInstance();
+        //mMediaRecorder = new MediaRecorder();
 
-        //classesRef.mMediaRecorder.prepare();
+        // Step 1: Unlock and set camera to MediaRecorder
+        classesRef.mCameraDevice.unlock();
+        //classesRef.mMediaRecorder.setCamera(classesRef.mCameraDevice);
 
-        // Set up Surface for the MediaRecorder
-        classesRef.mRecorderSurface = classesRef.mMediaRecorder.getSurface();
-        classesRef.surfaces.add(classesRef.mRecorderSurface);
-        classesRef.mPreviewBuilder.addTarget(classesRef.mRecorderSurface);
+        //// Step 2: Set sources
+        //classesRef.mMediaRecorder.setAudioSource(android.media.MediaRecorder.AudioSource.CAMCORDER);
+        //classesRef.mMediaRecorder.setVideoSource(android.media.MediaRecorder.VideoSource.CAMERA);
 
-        //let intent = new android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE);
-        //console.log(intent.resolveActivity(app.android.currentContext.getPackageManager()))
-        //if (intent.resolveActivity(app.android.currentContext.getPackageManager()) != null) {
-        //    app.android.currentContext.startActivityForResult(intent, classesRef.REQUEST_VIDEO_CAPTURE);
-        //}
+        //// Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
+        //classesRef.mMediaRecorder.setProfile(android.media.CamcorderProfile.get(android.media.CamcorderProfile.QUALITY_HIGH));
+        
+        //// Step 4: Set output file
+        //classesRef.mMediaRecorder.setOutputFile("/sdcard/videocapture_example.mp4");
 
-        //record(options: any): Promise < any > {
-        //    return new Promise((resolve, reject) => {
-                
-                //options = options || {}
-                //let data = null
-                //let file;
-                //options.size = options.size || 0;
-                //options.hd = options.hd ? 1 : 0;
-                //options.saveToGallery = options.saveToGallery || false;
-                //options.duration = options.duration || 0;
-                //options.explanation = options.explanation = "";
-                
-                //let startRecording = () => {
-                //    let intent = new android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE);
-                //    intent.putExtra(android.provider.MediaStore.EXTRA_VIDEO_QUALITY, options.hd);
+        //// Step 5: Set the preview output
+        //classesRef.mMediaRecorder.setPreviewDisplay(classesRef.mPreviewBuilder);
 
-                //    if (options.size > 0) {
-                //        intent.putExtra(android.provider.MediaStore.EXTRA_SIZE_LIMIT, options.size * 1024 * 1024);
-                //    }
-                //    if (!options.saveToGallery) {
-                //        file = new java.io.File(app.android.context.getFilesDir(), "videoCapture_" + +new Date() + ".mp4");
-                //        intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.net.Uri.fromFile(file))
-                //    } else {
-                //        file = new java.io.File(android.os.Environment.getExternalStoragePublicDirectory(
-                //            android.os.Environment.DIRECTORY_MOVIES).getAbsolutePath() + "/" + "videoCapture_" + +new Date() + ".mp4");
-
-                //        intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.net.Uri.fromFile(file))
-                //    }
-                //    if (options.duration > 0) {
-                //        intent.putExtra(android.provider.MediaStore.EXTRA_DURATION_LIMIT, options.duration);
-                //    }
-
-                //    if (intent.resolveActivity(app.android.currentContext.getPackageManager()) != null) {
-                //        app.android.currentContext.startActivityForResult(intent, classesRef.REQUEST_VIDEO_CAPTURE);
-
-                //        app.android.on(app.AndroidApplication.activityResultEvent, (args: app.AndroidActivityResultEventData) => {
-
-                //            if (args.requestCode === classesRef.REQUEST_VIDEO_CAPTURE && args.resultCode === classesRef.RESULT_OK) {
-
-                //                if (options.saveToGallery) {
-                //                    resolve({ file: file.toString() });
-                //                } else {
-                //                    resolve({ file: file.toString() });
-                //                }
-
-
-                //            } else if (args.resultCode === classesRef.RESULT_CANCELED) {
-                                
-                //                reject({ event: 'cancelled' })
-                //            } else {
-                //                reject({ event: 'failed' })
-                //            }
-
-                //        })
-                //    } else {
-                //        reject({ event: 'failed' })
-                //    }
-                //}
-
-                //if (classesRef.currentapiVersion >= classesRef.MARSHMALLOW) {
-
-                //    if (options.explanation.length > 0) {
-                //        permissions.requestPermission(android.Manifest.permission.CAMERA, options.explanation)
-                //            .then(function () {
-                //                startRecording();
-                //            })
-                //            .catch(function () {
-                //                reject({ event: 'camera permission needed' })
-                //            });
-                //    } else {
-                //        permissions.requestPermission(android.Manifest.permission.CAMERA)
-                //            .then(function () {
-                //                startRecording();
-                //            })
-                //            .catch(function () {
-                //                reject({ event: 'camera permission needed' })
-                //            });
-                //    }
-                //}
-                //else {
-                //    startRecording()
-                //}
-        //    })
+        // Step 6: Prepare configured MediaRecorder
+        //try {
+            //classesRef.mMediaRecorder.prepare();
+        //} catch (IllegalStateException e) {
+        //    console.log(TAG, "IllegalStateException preparing MediaRecorder: " + e.getMessage());
+            
+        //    classesRef.mMediaRecorder.release();
+        //    return false;
+        //} try (IOException e) {
+        //    console.log(TAG, "IOException preparing MediaRecorder: " + e.getMessage());
+        //    classesRef.mMediaRecorder.release();
 
         //}
-
+        //classesRef.mMediaRecorder.start();
     }
     public onSurfaceTextureAvailable(texture, width, height) {
 
@@ -232,7 +178,8 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
         classesRef.mSurfaceTexture = texture;
         console.log('classesRef.mSurfaceTexture-------------NOOO', classesRef.mSurfaceTexture);
         this.createCameraPreviewSession();
-        // openCamera(width, height);
+        //openCamera(width, height);
+        
     }
 
     public onSurfaceTextureSizeChanged(texture, width, height) {
@@ -258,6 +205,7 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
     
     public onLoaded = (args) => {
         console.log('1');
+        //console.log(args.object);
         this.page = args.object;
         
     }
@@ -324,11 +272,13 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
     public createCameraPreviewSession () {
         console.log('5')
         console.log("createCameraPreviewSession");
+        //classesRef.mSurfaceTexture = android.graphics.SurfaceTexture();
         //classesRef.mSurfaceTexture = android.graphics.SurfaceTexture;
+        //console.log(android.graphics.SurfaceTexture)
         if (!classesRef.mSurfaceTexture || !classesRef.mCameraDevice) {
             console.log('classesRef.mSurfaceTexture ----if --', classesRef.mSurfaceTexture);
             console.log('classesRef.mCameraDevice ----if --', classesRef.mCameraDevice);
-            console.log(this.mSurfaceTextureListener); // stopping here
+            console.log(this.mSurfaceTextureListener); // was stopping here
             this.mSurfaceTextureListener; // HERE
             console.log('after onSurfaceTexture')
             return;
@@ -336,9 +286,10 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
         console.log('classesRef.mSurfaceTexture ---- after--', classesRef.mSurfaceTexture);
         console.log('classesRef.mCameraDevice ---- after--', classesRef.mCameraDevice);
         var texture = classesRef.mTextureView.getSurfaceTexture();
-
+        console.log('texture')
+        console.log(texture)
         // We configure the size of default buffer to be the size of camera preview we want.
-        texture.setDefaultBufferSize(800, 480);
+        texture.setDefaultBufferSize(800, 480); // breakPoint texture is null
 
         // This is the output Surface we need to start preview.
         var surface = new android.view.Surface(texture);
@@ -353,7 +304,7 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
     }
 
     public onCreatingView = (args: any) => {
-        console.log('6')
+        console.log('6') // first
         //if (classesRef.app.ios) {
         //    var session = new AVCaptureSession();
         //    session.sessionPreset = AVCaptureSessionPreset1280x720;
@@ -408,10 +359,11 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
                     var dimensions = format[5].toString().split('x');
                     var largestWidth = +dimensions[0];
                     var largestHeight = +dimensions[1];
-
+                    
                     // set the output image characteristics
                     classesRef.mImageReader = new android.media.ImageReader.newInstance(largestWidth, largestHeight, android.graphics.ImageFormat.JPEG, /*maxImages*/2);
                     classesRef.mImageReader.setOnImageAvailableListener(this.mOnImageAvailableListener, classesRef.mBackgroundHandler);
+                    console.log('here1')
                 }
                 
             }
@@ -428,25 +380,29 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
                 } else if (android.support.v4.content.ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_DENIED) {
                     console.log("NO PERMISIONS - about to try get them!!!"); // I am crashing here - wrong reference for shouldShowRequestPermissionRationale !?
                     
-                    // console.log(android.support.v4.app.ActivityCompat.shouldShowRequestPermissionRationale(appContext, android.Manifest.permission.CAMERA).toString());
+                     console.log(android.support.v4.app.ActivityCompat.shouldShowRequestPermissionRationale(appContext, android.Manifest.permission.CAMERA).toString());
 
-                    // if (android.support.v4.app.ActivityCompat.shouldShowRequestPermissionRationale(appContext, android.Manifest.permission.CAMERA)){
-                    //     console.log("No Permission to use the Camera services");
-                    // }
+                     if (android.support.v4.app.ActivityCompat.shouldShowRequestPermissionRationale(appContext, android.Manifest.permission.CAMERA)){
+                         console.log("No Permission to use the Camera services");
+                     }
 
-                    // // var stringArray = Array.create(java.lang.String, 1);
-                    // // stringArray[0] = android.Manifest.permission.CAMERA;
-                    // console.log("Permison is about to be granted!!!!");
-                    // android.support.v4.app.ActivityCompat.requestPermissions(appContext, [], REQUEST_CAMERA_RESULT);
+                     // var stringArray = Array.create(java.lang.String, 1);
+                     // stringArray[0] = android.Manifest.permission.CAMERA;
+                     console.log("Permison is about to be granted!!!!");
+                     //android.support.v4.app.ActivityCompat.requestPermissions(appContext, [], REQUEST_CAMERA_RESULT);
                 }
             } else {
                 cameraManager.openCamera(classesRef.mCameraId, classesRef.mStateCallBack, classesRef.mBackgroundHandler);
             }
 
             // cameraManager.openCamera(mCameraId, mStateCallBack, mBackgroundHandler);
-            
+            console.log('here - before break point')
             classesRef.mTextureView = new android.view.TextureView(classesRef.app.android.context);
-            classesRef.mTextureView.setSurfaceTextureListener(this.mSurfaceTextureListener);
+            console.log(classesRef.mTextureView);
+            console.log(args);
+            console.log('after args and mTextureView logs, before break')
+            classesRef.mTextureView.setSurfaceTextureListener(this.mSurfaceTextureListener); // the listener is populated, but the set is causing issues
+            console.log('after break point')
             args.view = classesRef.mTextureView;
             //args.view.setAlpha(0.5); // make the camera view translucent
 
@@ -464,9 +420,10 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
             }
 
             classesRef.mCaptureSession = cameraCaptureSession;
-
+            // brakes here
+            
             //classesRef.mPreviewRequestBuilder.set(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE, android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-            // // Flash is automatically enabled when necessary.
+             // Flash is automatically enabled when necessary.
             //classesRef.setAutoFlash(classesRef.mPreviewRequestBuilder);
 
             // Finally, we start displaying the camera preview.
@@ -532,7 +489,7 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
             this.process(partialResult);
         },
         onCaptureCompleted: function (session, request, result) {
-            // console.log("onCaptureCompleted"); // repeats!!!!!
+             //console.log("onCaptureCompleted"); // repeats!!!!!
             this.process(result);
         },
         onCaptureFailed: function (session, request, failure) {
@@ -585,7 +542,7 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
 
     });
 
-    // from Java : public static interface    
+    // from Java : public static interface    // WRONG ONE
     //public mSurfaceTextureListener = () => new android.view.TextureView.SurfaceTextureListener({
 
     //    onSurfaceTextureAvailable: (texture, width, height) => {
@@ -607,7 +564,7 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
     //    },
 
     //    onSurfaceTextureUpdated: (texture) => {
-    //        // console.log("onSurfaceTexturUpdated");
+    //         console.log("onSurfaceTexturUpdated");
     //    },
 
     //});
@@ -643,6 +600,15 @@ export class Camera extends java.lang.Object implements OnInit, android.view.Tex
     });
     
 }
+// } else if (platformModule.isIOS) {
+//     @Injectable()   
+//     export class Camera {
+//         constructor(private page: Page) {
+            
+//         }
+//     }
+// }
+
 export class classesRef {
     
     static app = require('application');
@@ -671,7 +637,7 @@ export class classesRef {
     static PERMISSION_GRANTED = 0;
     static MARSHMALLOW = 23;
     static currentapiVersion = android.os.Build.VERSION.SDK_INT;
-    static mMediaRecorder;
+    static mMediaRecorder = new android.media.MediaRecorder();
     static mNextVideoAbsolutePath = fs.knownFolders.documents();
     static mRecorderSurface;
     static mPreviewBuilder;
@@ -689,6 +655,7 @@ export class classesRef {
     constructor(private page: Page) {
     }
 }
+
 //export class TNSSurfaceTextureListner extends java.lang.Object implements android.view.TextureView.SurfaceTextureListener {
 //    public that = new WeakRef(this);
 //    public mSurfaceTextureListener = () => new android.view.TextureView.SurfaceTextureListener({

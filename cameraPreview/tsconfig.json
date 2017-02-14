@@ -1,16 +1,23 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es5",
-    "sourceMap": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "noEmitHelpers": true,
-    "noEmitOnError": true
-  },
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es5",
+        "skipLibCheck": true,
+        "declaration": false,
+        "noImplicitAny": false,
+        "noImplicitUseStrict": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "pretty": true,
+        "noEmitHelpers": true,
+        "noEmitOnError": true,
+        "lib": [
+            "es2016"
+        ]
+    },
     "exclude": [
-      "node_modules",
-      "platforms",
-      "**/*.aot.ts"
+        "node_modules",
+        "platforms",
+        "**/*.aot.ts"
     ]
 }
